@@ -2,10 +2,12 @@ class MCTS{
     constructor(state, layers = null, depth = 0){
         this.parents = []
         this.children = []
-        this.state = state  
+        this.state = state
+        this.id = state.id
         this.leaf = true
         this.nVisits = 0
-        this.value = 0
+        this.nWins = 0
+        this.nLosses = 0
         this.depth = depth
         if (layers){
             this.layers = layers
@@ -14,34 +16,33 @@ class MCTS{
         }
         this.locationInLayer = 0
         this.meanLocationParents = 0
+        this.endGame = this.state.checkEndGame()
     }
 
-    iteration(totalVisits) {
+    iteration(UCB1Constant, totalVisits=null) {
         if (!totalVisits) {
             totalVisits = this.nVisits
         }
-        if (this.leaf) {
-            if (this.nVisits == 0){
-                var result = this.rollout()
-                this.backpropagation(result)
+        if (this.endGame || this.state.nRemainingMoves == 0) {
+            this.backpropagation(this.endGame)
+            return
+        } else if (this.leaf) {
+            if (this.nVisits < 1){
+                this.backpropagation(this.rollout())
                 return
             } else {
                 this.expansion()
             }
         }
-        var selectedChild = this.selection(totalVisits)
-        if (!selectedChild) {
-            console.log('selectedChild', selectedChild)
-            console.log('this', this)
-        }
-        selectedChild.iteration(totalVisits)
+        var selectedChild = this.selection(UCB1Constant, totalVisits)
+        selectedChild.iteration(UCB1Constant, totalVisits)
     }
 
-    selection(totalVisits) {
+    selection(UCB1Constant, totalVisits) {
         var bestChildren = []
         var bestChildUSB1 = -1
         for (var i=0; i<this.children.length; i++) {
-            var childUSB1 = this.children[i].UCB1(totalVisits)
+            var childUSB1 = this.children[i].UCB1(UCB1Constant, totalVisits)
             if (childUSB1 > bestChildUSB1) {
                 bestChildren = [this.children[i]]
                 bestChildUSB1 = childUSB1
@@ -82,17 +83,26 @@ class MCTS{
 
     backpropagation(result) {
         this.nVisits++
-        this.value += result
+        if (result == 1) {
+            this.nWins++
+        } else if (result == -1){
+            this.nLosses++
+        }
         this.parents.forEach(parent => {
             parent.backpropagation(result)
         })
     }
 
-    UCB1(totalVisits) {
+    UCB1(UCB1Constant, totalVisits) {
         if (this.nVisits == 0) {
             return 1e9
         }
-        return (this.value / this.nVisits) + 0.002*Math.sqrt(Math.log(totalVisits) / this.nVisits)
+        if (this.turnX) {
+            var value = this.nWins
+        } else {
+            var value = this.nLosses
+        }
+        return (value / this.nVisits) + UCB1Constant*Math.sqrt(Math.log(totalVisits) / this.nVisits)
     }
 
     alreadyPresent(child) {

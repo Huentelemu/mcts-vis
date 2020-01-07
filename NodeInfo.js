@@ -21,7 +21,7 @@ class NodeInfo {
         this.tooltip.style('opacity', 0.9)
             .style('top', parseInt(circle.attr('cy')) + 50 + 'px')
             .style('left', parseInt(circle.attr('cx')) + 50 + 'px')
-        this.tooltipText.html(node.value + '/' + node.nVisits + '<br/>meanLocationParents: ' + node.meanLocationParents)
+        this.tooltipText.html(node.nWins + '/' + node.nVisits) // <br/>
         this.tooltipSVG.selectAll("*").remove()
         node.state.drawImage(this.tooltipSVG)
     }

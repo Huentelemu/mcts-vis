@@ -1,18 +1,19 @@
 class TicTacToe{
-    constructor(newTTT, turnX){
+    constructor(newTTT, turnX, nRemainingMoves){
         if (newTTT){
             this.ttt = newTTT
             this.turnX = turnX
-            this.code = 0
+            this.id = 0
             for (var i=0; i<this.ttt.length; i++){
                 for (var j=0; j<this.ttt[i].length; j++){
                     if (this.ttt[i][j] == -1){
-                        this.code += 1 * Math.pow(3, i*3 + j)
+                        this.id += 1 * Math.pow(3, i*3 + j)
                     } else if (this.ttt[i][j] == 1){
-                        this.code += 2 * Math.pow(3, i*3 + j)
+                        this.id += 2 * Math.pow(3, i*3 + j)
                     }
                 }
             }
+            this.nRemainingMoves = nRemainingMoves
         } else {
             this.ttt = [
                 [
@@ -26,7 +27,8 @@ class TicTacToe{
                 ]
             ]
             this.turnX = true
-            this.code = 0
+            this.id = 0
+            this.nRemainingMoves = 9
         }
     }
 
@@ -34,10 +36,10 @@ class TicTacToe{
         var stateChildren = []
 
         // Special case for first expansion
-        if (this.code == 0){
-            stateChildren.push(new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false))
-            stateChildren.push(new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false))
-            stateChildren.push(new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false))
+        if (this.id == 0){
+            stateChildren.push(new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false, 8))
+            stateChildren.push(new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false, 8))
+            stateChildren.push(new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false, 8))
             return stateChildren
         }
 
@@ -53,7 +55,7 @@ class TicTacToe{
                     } else {
                         newTTT[i][j] = -1
                     }
-                    stateChildren.push(new TicTacToe(newTTT, !this.turnX))
+                    stateChildren.push(new TicTacToe(newTTT, !this.turnX, this.nRemainingMoves-1))
                 }
             }
         }
@@ -95,7 +97,7 @@ class TicTacToe{
         return 0
     }
 
-    checkEndGame(s) {
+    checkEndGame(s=this.ttt) {
         for (var i=0; i<3; i++) {
             var result = s[i][0] + s[i][1] + s[i][2]
             if (result == 3) return 1

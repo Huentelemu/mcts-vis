@@ -11,6 +11,8 @@ var nodes = []
 var links_g = []
 var links = []
 
+var UCB1Constant = 2
+
 var nodeInfo = new NodeInfo()
 
 root = new MCTS(new TicTacToe)
@@ -19,7 +21,7 @@ printNodes(root.layers)
 
 var iterationButton = d3.select('body').append('button').text('Iteration')
     .on('click', () => {
-        root.iteration()
+        root.iteration(UCB1Constant)
         console.log('Layers:', root.layers)
         printNodes(root.layers)
         console.log('Links:', links)
@@ -27,19 +29,27 @@ var iterationButton = d3.select('body').append('button').text('Iteration')
         
     })
 
-var nMultipleIterations = 50
+var nMultipleIterations = 1000
 var multiIterationButton = d3.select('body').append('button').text(nMultipleIterations + ' Iterations')
     .on('click', () => {
         for (var i=0; i<nMultipleIterations; i++){
-            root.iteration()
+            root.iteration(UCB1Constant)
         }
         printNodes(root.layers)
-        console.log('Links:', links)
+        console.log('Layers:', root.layers)
     })
+
+function iterationFunction(nIterations) {
+    for (var i=0; i<nIterations; i++){
+        root.iteration(UCB1Constant)
+    }
+    printNodes(root.layers)
+    console.log('Layers:', root.layers)
+}
 
 var colorScale = d3.scaleLinear()
     .range(['white', 'red']) // or use hex values
-    .domain([0.4, 0.6]);
+    .domain([0.25, 0.75]);
 
 function printNodes(layers) {
 
@@ -92,24 +102,46 @@ function printNodes(layers) {
                 if (d.nVisits == 0) {
                     return 'green'
                 } else {
-                    return colorScale(d.value / d.nVisits)
+                    return colorScale(d.nWins / d.nVisits)
                 }
             })
             .attr("stroke", "black")
-            .attr("stroke-width", 3)
+            .attr("stroke-width", 1)
             .attr('opacity', 0.5)
-            .attr('r', 10) 
+            .attr('r', function(d) {
+                if (root.nVisits>0) {
+                    var relativeToRoot = d.nVisits/root.nVisits
+                } else {
+                    var relativeToRoot = 1
+                }
+                return relativeToRoot*50 + 5
+            }) 
             .style('position', 'absolute')
             .on('mouseover', function(d) {
                 d3.select(this).transition().duration(10)
-                    .attr('r', 25)
                     .attr('opacity', 1)
+                    .attr('r', function(d) {
+                        if (root.nVisits>0) {
+                            var relativeToRoot = d.nVisits/root.nVisits
+                        } else {
+                            var relativeToRoot = 1
+                        }
+                        return (relativeToRoot*50 + 5) * 2
+                    })
                 nodeInfo.show(d, d3.select(this))
             })
             .on('mouseout', function() {
                 d3.select(this).transition().duration(300)
-                    .attr('r', 10)
                     .attr('opacity', 0.5)
+                    .attr('r', function(d) {
+                        if (root.nVisits>0) {
+                            var relativeToRoot = d.nVisits/root.nVisits
+                        } else {
+                            var relativeToRoot = 1
+                        }
+                        return relativeToRoot*50 + 5
+                    })
+                    
                 nodeInfo.hide()
             })
 
@@ -137,7 +169,7 @@ function printNodes(layers) {
 
                     var childrenSeparation = width / (layers[depth+1].length + 1)
                     var sonIndex = layers[depth+1].findIndex(function(child) {
-                        return child.state.code == d.state.code
+                        return child.id == d.id
                     })
                     var x2 = childrenSeparation * (sonIndex + 1)
                     

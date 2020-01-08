@@ -24,18 +24,21 @@ class MCTS{
             totalVisits = this.nVisits
         }
         if (this.endGame || this.state.nRemainingMoves == 0) {
-            this.backpropagation(this.endGame)
-            return
+            var result = this.endGame
         } else if (this.leaf) {
             if (this.nVisits < 1){
-                this.backpropagation(this.rollout())
-                return
+                var result = this.rollout()
             } else {
                 this.expansion()
+                var selectedChild = this.selection(UCB1Constant, totalVisits)
+                var result = selectedChild.iteration(UCB1Constant, totalVisits)
             }
+        } else {
+            var selectedChild = this.selection(UCB1Constant, totalVisits)
+            var result = selectedChild.iteration(UCB1Constant, totalVisits)
         }
-        var selectedChild = this.selection(UCB1Constant, totalVisits)
-        selectedChild.iteration(UCB1Constant, totalVisits)
+        this.backpropagation(result)
+        return result
     }
 
     selection(UCB1Constant, totalVisits) {
@@ -78,7 +81,8 @@ class MCTS{
     }
 
     rollout() {
-        return this.state.rollout()
+        var result = this.state.rollout()
+        return result
     }
 
     backpropagation(result) {
@@ -88,9 +92,6 @@ class MCTS{
         } else if (result == -1){
             this.nLosses++
         }
-        this.parents.forEach(parent => {
-            parent.backpropagation(result)
-        })
     }
 
     UCB1(UCB1Constant, totalVisits) {

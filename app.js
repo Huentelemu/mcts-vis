@@ -11,7 +11,7 @@ var nodes = []
 var links_g = []
 var links = []
 
-var UCB1Constant = 2
+var UCB1Constant = 0.0002
 
 var nodeInfo = new NodeInfo()
 
@@ -21,7 +21,7 @@ printNodes(root.layers)
 
 var iterationButton = d3.select('body').append('button').text('Iteration')
     .on('click', () => {
-        root.iteration(UCB1Constant)
+        var result = root.iteration(UCB1Constant)
         console.log('Layers:', root.layers)
         printNodes(root.layers)
         console.log('Links:', links)
@@ -33,7 +33,7 @@ var nMultipleIterations = 1000
 var multiIterationButton = d3.select('body').append('button').text(nMultipleIterations + ' Iterations')
     .on('click', () => {
         for (var i=0; i<nMultipleIterations; i++){
-            root.iteration(UCB1Constant)
+            var result = root.iteration(UCB1Constant)
         }
         printNodes(root.layers)
         console.log('Layers:', root.layers)

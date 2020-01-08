@@ -86,11 +86,9 @@ class TicTacToe{
             }
             //check win condition
             var result = this.checkEndGame(rolloutState)
-            if (result == 1){
-                return 1
-            } else if (result == -1) {
-                return 0
-            }
+            if (result != 0){
+                return result
+            } 
             rolloutTurnX = !rolloutTurnX
         }
         

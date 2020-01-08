@@ -19,10 +19,7 @@ class MCTS{
         this.endGame = this.state.checkEndGame()
     }
 
-    iteration(UCB1Constant, totalVisits=null) {
-        if (!totalVisits) {
-            totalVisits = this.nVisits
-        }
+    iteration(UCB1Constant) {
         if (this.endGame || this.state.nRemainingMoves == 0) {
             var result = this.endGame
         } else if (this.leaf) {
@@ -30,22 +27,22 @@ class MCTS{
                 var result = this.rollout()
             } else {
                 this.expansion()
-                var selectedChild = this.selection(UCB1Constant, totalVisits)
-                var result = selectedChild.iteration(UCB1Constant, totalVisits)
+                var selectedChild = this.selection(UCB1Constant)
+                var result = selectedChild.iteration(UCB1Constant)
             }
         } else {
-            var selectedChild = this.selection(UCB1Constant, totalVisits)
-            var result = selectedChild.iteration(UCB1Constant, totalVisits)
+            var selectedChild = this.selection(UCB1Constant)
+            var result = selectedChild.iteration(UCB1Constant)
         }
         this.backpropagation(result)
         return result
     }
 
-    selection(UCB1Constant, totalVisits) {
+    selection(UCB1Constant) {
         var bestChildren = []
         var bestChildUSB1 = -1
         for (var i=0; i<this.children.length; i++) {
-            var childUSB1 = this.children[i].UCB1(UCB1Constant, totalVisits)
+            var childUSB1 = this.children[i].UCB1(UCB1Constant, this.nVisits)
             if (childUSB1 > bestChildUSB1) {
                 bestChildren = [this.children[i]]
                 bestChildUSB1 = childUSB1
@@ -94,7 +91,7 @@ class MCTS{
         }
     }
 
-    UCB1(UCB1Constant, totalVisits) {
+    UCB1(UCB1Constant, parentNVisits) {
         if (this.nVisits == 0) {
             return 1e9
         }
@@ -103,7 +100,7 @@ class MCTS{
         } else {
             var value = this.nLosses
         }
-        return (value / this.nVisits) + UCB1Constant*Math.sqrt(Math.log(totalVisits) / this.nVisits)
+        return (value / this.nVisits) + UCB1Constant*Math.sqrt(Math.log(parentNVisits) / this.nVisits)
     }
 
     alreadyPresent(child) {

@@ -17,10 +17,10 @@ class LinkInfo {
             
     }
 
-    show(node, childCircle) {
+    show(node, childLine) {
         this.tooltip.style('opacity', 0.9)
-            .style('top', parseInt(childCircle.attr('cy')) + 50 + 'px')
-            .style('left', parseInt(childCircle.attr('cx')) + 50 + 'px')
+            .style('top', parseInt(childCircle.attr('y2')) + 50 + 'px')
+            .style('left', parseInt(childCircle.attr('x2')) + 50 + 'px')
         this.tooltipText.html('asdasdasd')  // '<br/>UCB1: '
         this.tooltipSVG.selectAll("*").remove()
         node.state.drawImage(this.tooltipSVG, true)

@@ -83,19 +83,23 @@ function printNodes(layers) {
         links.push([])
     }
     for (var depth=0; depth<layers.length; depth++) {
+        var parentsSeparation = width / (layers[depth].length + 1)
+        if (layers.length > depth + 1) {
+            var childrenSeparation = width / (layers[depth+1].length + 1)
+        }
+        
+        var vertSeparation = height / (nMaxLayers+1)
+        var parentsYLocation = vertSeparation * (depth + 1)
+        var childrenYLocation = vertSeparation * (depth + 2)
 
         // Build nodes
         nodes[depth] = nodes_g[depth].selectAll('circle').data(layers[depth])
         nodes[depth].exit().remove()
         nodes[depth] = nodes[depth].enter().append("circle").merge(nodes[depth])
             .attr('cx', function(d, i) {
-                var separation = width / (layers[depth].length+1)
-                return separation * (i + 1)
+                return parentsSeparation * (i + 1)
             })
-            .attr('cy', function(d, i) {
-                var separation = height / (nMaxLayers+1)
-                return separation * (depth + 1)
-            })
+            .attr('cy', parentsYLocation)
             .attr('fill', function(d) {
                 if (d.nVisits == 0) {
                     return 'green'
@@ -169,9 +173,11 @@ function printNodes(layers) {
         }
         for (var parentIndex=0; parentIndex<layers[depth].length; parentIndex++){
             var parent = layers[depth][parentIndex]
-            links[depth][parentIndex] = links_g[depth][parentIndex].selectAll('path').data(parent.children)
+            var parentXLocation = parentsSeparation * (parentIndex + 1)
+
+            links[depth][parentIndex] = links_g[depth][parentIndex].selectAll('line').data(parent.children)
             links[depth][parentIndex].exit().remove()
-            links[depth][parentIndex] = links[depth][parentIndex].enter().append('path').merge(links[depth][parentIndex])
+            links[depth][parentIndex] = links[depth][parentIndex].enter().append('line').merge(links[depth][parentIndex])
                 .attr('stroke', 'black')
                 .attr('fill', 'none')
                 .attr('stroke-width', d => {
@@ -186,23 +192,15 @@ function printNodes(layers) {
                     }
                     return 0.1
                 })
-                .attr('d', function(d) {
-                    var parentsSeparation = width / (layers[depth].length + 1)
-                    var x1 = parentsSeparation * (parentIndex + 1)
-
-                    var vertSeparation = height / (nMaxLayers+1)
-                    var y1 = vertSeparation * (depth + 1)
-
-                    var childrenSeparation = width / (layers[depth+1].length + 1)
+                .attr('x1', parentXLocation)
+                .attr('y1', parentsYLocation)
+                .attr('x2', d => {
                     var sonIndex = layers[depth+1].findIndex(function(child) {
                         return child.id == d.id
                     })
-                    var x2 = childrenSeparation * (sonIndex + 1)
-                    
-                    var y2 = vertSeparation * (depth + 2)
-
-                    return 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2
+                    return childrenSeparation * (sonIndex + 1)
                 })
+                .attr('y2', childrenYLocation)
                 .on('mouseover', function(d) {
                     d3.select(this).transition().duration(10)
                         .attr('opacity', 1)

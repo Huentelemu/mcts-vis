@@ -1,4 +1,4 @@
-class NodeInfo {
+class LinkInfo {
 
     constructor () {
         this.tooltip = d3.select('body').append('div')
@@ -17,13 +17,13 @@ class NodeInfo {
             
     }
 
-    show(node, circle) {
+    show(node, childCircle) {
         this.tooltip.style('opacity', 0.9)
-            .style('top', parseInt(circle.attr('cy')) + 50 + 'px')
-            .style('left', parseInt(circle.attr('cx')) + 50 + 'px')
-        this.tooltipText.html(node.nWins + '/' + node.nVisits)  // '<br/>UCB1: '
+            .style('top', parseInt(childCircle.attr('cy')) + 50 + 'px')
+            .style('left', parseInt(childCircle.attr('cx')) + 50 + 'px')
+        this.tooltipText.html('asdasdasd')  // '<br/>UCB1: '
         this.tooltipSVG.selectAll("*").remove()
-        node.state.drawImage(this.tooltipSVG)
+        node.state.drawImage(this.tooltipSVG, true)
     }
 
     hide() {

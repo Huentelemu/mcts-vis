@@ -14,6 +14,7 @@ var links = []
 var UCB1Constant = 2
 
 var nodeInfo = new NodeInfo()
+var linkInfo = new LinkInfo()
 
 root = new MCTS(new TicTacToe)
 
@@ -142,8 +143,7 @@ function printNodes(layers) {
                         }
                         return (relativeToRoot*50 + 5) * 2
                     })
-                var UCB1Score = 0
-                nodeInfo.show(d, d3.select(this), UCB1Score)
+                nodeInfo.show(d, d3.select(this))
             })
             .on('mouseout', function() {
                 d3.select(this).transition().duration(300)
@@ -176,7 +176,7 @@ function printNodes(layers) {
                 .attr('fill', 'none')
                 .attr('stroke-width', d => {
                     if (d.preselected && parent.preselected){
-                        return 5
+                        return 3
                     }
                     return 1
                 })
@@ -202,6 +202,18 @@ function printNodes(layers) {
                     var y2 = vertSeparation * (depth + 2)
 
                     return 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2
+                })
+                .on('mouseover', function(d) {
+                    d3.select(this).transition().duration(10)
+                        .attr('opacity', 1)
+                        .attr('stroke-width', 5)
+                    linkInfo.show(d, d3.select(this))
+                })
+                .on('mouseout', function() {
+                    d3.select(this).transition().duration(300)
+                        .attr('opacity', 0.1)
+                        .attr('stroke-width', 1)
+                    linkInfo.hide()
                 })
             links_g[depth][parentIndex].lower()
         }

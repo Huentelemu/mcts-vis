@@ -11,7 +11,7 @@ var nodes = []
 var links_g = []
 var links = []
 
-var UCB1Constant = 0.0002
+var UCB1Constant = 2
 
 var nodeInfo = new NodeInfo()
 
@@ -19,25 +19,14 @@ root = new MCTS(new TicTacToe)
 
 printNodes(root.layers)
 
-var iterationButton = d3.select('body').append('button').text('Iteration')
-    .on('click', () => {
-        var result = root.iteration(UCB1Constant)
-        console.log('Layers:', root.layers)
-        printNodes(root.layers)
-        console.log('Links:', links)
-        console.log('Nodes:', nodes)
-        
-    })
+var iterationButton = d3.select('body').append('button').text('1 Iteration')
+    .on('click', () => iterationFunction(1))
 
-var nMultipleIterations = 1000
-var multiIterationButton = d3.select('body').append('button').text(nMultipleIterations + ' Iterations')
-    .on('click', () => {
-        for (var i=0; i<nMultipleIterations; i++){
-            var result = root.iteration(UCB1Constant)
-        }
-        printNodes(root.layers)
-        console.log('Layers:', root.layers)
-    })
+var multiIterationButton1 = d3.select('body').append('button').text('20 Iterations')
+    .on('click', () => iterationFunction(20))
+
+var multiIterationButton2 = d3.select('body').append('button').text('1000 Iterations')
+    .on('click', () => iterationFunction(1000))
 
 function iterationFunction(nIterations) {
     for (var i=0; i<nIterations; i++){
@@ -45,11 +34,13 @@ function iterationFunction(nIterations) {
     }
     printNodes(root.layers)
     console.log('Layers:', root.layers)
+    console.log('Links:', links)
+    console.log('Nodes:', nodes)
 }
 
 var colorScale = d3.scaleLinear()
-    .range(['white', 'red']) // or use hex values
-    .domain([0.25, 0.75]);
+    .range(['red', 'white', 'blue']) // or use hex values
+    .domain([0.25, 0.5, 0.75]);
 
 function printNodes(layers) {
 
@@ -76,6 +67,12 @@ function printNodes(layers) {
             return a.meanLocationParents - b.meanLocationParents
         })
     }
+
+    // Clean previous preselected status
+    root.cleanPreselections()
+
+    // Paint preselected status
+    root.preselection(UCB1Constant)
 
     // Ensure nodes are initialized
     while (layers.length > nodes_g.length) {
@@ -105,9 +102,26 @@ function printNodes(layers) {
                     return colorScale(d.nWins / d.nVisits)
                 }
             })
-            .attr("stroke", "black")
+            .attr("stroke", d => {
+                if (d.preselected){
+                    return 'black'
+                } else {
+                    return 'black'
+                }
+            })
             .attr("stroke-width", 1)
-            .attr('opacity', 0.5)
+            .attr("stroke-width", d => {
+                if (d.preselected) {
+                    return 5
+                }
+                return 1
+            })
+            .attr("opacity", d => {
+                if (d.preselected) {
+                    return 1
+                }
+                return 0.5
+            })
             .attr('r', function(d) {
                 if (root.nVisits>0) {
                     var relativeToRoot = d.nVisits/root.nVisits
@@ -128,7 +142,8 @@ function printNodes(layers) {
                         }
                         return (relativeToRoot*50 + 5) * 2
                     })
-                nodeInfo.show(d, d3.select(this))
+                var UCB1Score = 0
+                nodeInfo.show(d, d3.select(this), UCB1Score)
             })
             .on('mouseout', function() {
                 d3.select(this).transition().duration(300)
@@ -144,6 +159,7 @@ function printNodes(layers) {
                     
                 nodeInfo.hide()
             })
+            .on('click', (d) => console.log('MCTS', d))
 
         // Build links
 
@@ -158,8 +174,18 @@ function printNodes(layers) {
             links[depth][parentIndex] = links[depth][parentIndex].enter().append('path').merge(links[depth][parentIndex])
                 .attr('stroke', 'black')
                 .attr('fill', 'none')
-                .attr('stroke-width', 1)
-                .attr('opacity', 0.1)
+                .attr('stroke-width', d => {
+                    if (d.preselected && parent.preselected){
+                        return 5
+                    }
+                    return 1
+                })
+                .attr('opacity', d => {
+                    if (d.preselected && parent.preselected) {
+                        return 1
+                    }
+                    return 0.1
+                })
                 .attr('d', function(d) {
                     var parentsSeparation = width / (layers[depth].length + 1)
                     var x1 = parentsSeparation * (parentIndex + 1)
@@ -177,23 +203,6 @@ function printNodes(layers) {
 
                     return 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2
                 })
-                /*.attr('x1', function() {
-                    var separation = width / (layers[depth].length + 1)
-                    return separation * (parentIndex + 1)
-                })
-                .attr('y1', function() {
-                    var separation = height / (nMaxLayers+1)
-                    return separation * (depth + 1)
-                })
-                .attr('x2', function(d) {
-                    var separation = width / (layers[depth+1].length + 1)
-                    var sonIndex = 1
-                    return separation * (sonIndex + 1)
-                })
-                .attr('y2', function() {
-                    var separation = height / (nMaxLayers+1)
-                    return separation * (depth + 2)
-                })*/
             links_g[depth][parentIndex].lower()
         }
     }

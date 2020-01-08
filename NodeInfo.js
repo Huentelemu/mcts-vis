@@ -17,11 +17,11 @@ class NodeInfo {
             
     }
 
-    show(node, circle) {
+    show(node, circle, UCB1Score) {
         this.tooltip.style('opacity', 0.9)
             .style('top', parseInt(circle.attr('cy')) + 50 + 'px')
             .style('left', parseInt(circle.attr('cx')) + 50 + 'px')
-        this.tooltipText.html(node.nWins + '/' + node.nVisits) // <br/>
+        this.tooltipText.html(node.nWins + '/' + node.nVisits + '<br/>UCB1: ' + UCB1Score) 
         this.tooltipSVG.selectAll("*").remove()
         node.state.drawImage(this.tooltipSVG)
     }

@@ -17,6 +17,7 @@ class MCTS{
         this.locationInLayer = 0
         this.meanLocationParents = 0
         this.endGame = this.state.checkEndGame()
+        this.preselected = false
     }
 
     iteration(UCB1Constant) {
@@ -38,7 +39,7 @@ class MCTS{
         return result
     }
 
-    selection(UCB1Constant) {
+    selection(UCB1Constant, returnArray=false) {
         var bestChildren = []
         var bestChildUSB1 = -1
         for (var i=0; i<this.children.length; i++) {
@@ -49,6 +50,9 @@ class MCTS{
             } else if (childUSB1 == bestChildUSB1) {
                 bestChildren.push(this.children[i])
             }
+        }
+        if (returnArray) {
+            return bestChildren
         }
         return bestChildren[Math.floor(Math.random() * bestChildren.length)]
     }
@@ -114,4 +118,22 @@ class MCTS{
         return false
     }
 
+    cleanPreselections() {
+        // Reset all preselected states in nodes
+        this.preselected = false
+        this.children.forEach(child => {
+            if (child.preselected) {
+                child.cleanPreselections()
+            }
+        })
+    }
+
+    preselection(UCB1Constant) {
+        // function to paint links and nodes as preselected for display
+        this.preselected = true
+        var bestChildren = this.selection(UCB1Constant, true)
+        bestChildren.forEach(child => {
+            child.preselection(UCB1Constant)
+        })
+    }
 }

@@ -3,6 +3,12 @@ var height = 1100
 var nMaxLayers = 10
 var mainSVG = d3.select('body').append('svg').attr('width', width).attr('height', height)
 
+document.body.style.background = "gray"
+
+var colorScale = d3.scaleLinear()
+    .range(['red', 'white', 'blue']) // or use hex values
+    .domain([0.25, 0.5, 0.75]);
+
 //var nodes_g = this.mainSVG.append("g")
 //var nodes = this.points_g.selectAll('circle').data(this.data)
 
@@ -13,9 +19,11 @@ var links = []
 
 var UCB1Constant = 2
 
+// Initialize info tooltips
 var nodeInfo = new NodeInfo()
 var linkInfo = new LinkInfo()
 
+// Initialize MCTS with empty game
 root = new MCTS(new TicTacToe)
 
 printNodes(root.layers)
@@ -39,15 +47,13 @@ function iterationFunction(nIterations) {
     console.log('Nodes:', nodes)
 }
 
-var colorScale = d3.scaleLinear()
-    .range(['red', 'white', 'blue']) // or use hex values
-    .domain([0.25, 0.5, 0.75]);
 
 function printNodes(layers) {
 
     // Reorder nodes in layers for cleaner display of links
     for (var depth=0; depth<layers.length-1; depth++) {
-        // Save in MCTS object its relative location in layers array
+
+        // Save in MCTS node its relative location in layers array
         for (var parentIndex=0; parentIndex<layers[depth].length; parentIndex++) {
             layers[depth][parentIndex].locationInLayer = parentIndex
         }
@@ -58,7 +64,7 @@ function printNodes(layers) {
             var parents = layers[depth+1][childIndex].parents
             //console.log('parent', layers[depth+1][childIndex].parents)
             for (var childsParentIndex=0; childsParentIndex<parents.length; childsParentIndex++){
-                sumLocations += parents[childsParentIndex].locationInLayer
+                sumLocations += parents[childsParentIndex].parentNode.locationInLayer
             }
             layers[depth+1][childIndex].meanLocationParents = sumLocations / layers[depth+1][childIndex].parents.length
         }
@@ -82,6 +88,7 @@ function printNodes(layers) {
         links_g.push([])
         links.push([])
     }
+
     for (var depth=0; depth<layers.length; depth++) {
         var parentsSeparation = width / (layers[depth].length + 1)
         if (layers.length > depth + 1) {
@@ -138,7 +145,12 @@ function printNodes(layers) {
             .style('position', 'absolute')
             .on('mouseover', function(d) {
                 d3.select(this).transition().duration(10)
-                    .attr('opacity', 1)
+                    .attr('opacity', d => {
+                        if (d.preselected) {
+                            return 1
+                        }
+                        return 0.5
+                    })
                     .attr('r', function(d) {
                         if (root.nVisits>0) {
                             var relativeToRoot = d.nVisits/root.nVisits
@@ -151,7 +163,12 @@ function printNodes(layers) {
             })
             .on('mouseout', function() {
                 d3.select(this).transition().duration(300)
-                    .attr('opacity', 0.5)
+                    .attr('opacity', d => {
+                        if (d.preselected) {
+                            return 1
+                        }
+                        return 0.5
+                    })
                     .attr('r', function(d) {
                         if (root.nVisits>0) {
                             var relativeToRoot = d.nVisits/root.nVisits
@@ -181,13 +198,13 @@ function printNodes(layers) {
                 .attr('stroke', 'black')
                 .attr('fill', 'none')
                 .attr('stroke-width', d => {
-                    if (d.preselected && parent.preselected){
-                        return 3
+                    if (d.preselected){
+                        return 5
                     }
-                    return 1
+                    return 3
                 })
                 .attr('opacity', d => {
-                    if (d.preselected && parent.preselected) {
+                    if (d.preselected) {
                         return 1
                     }
                     return 0.1
@@ -196,7 +213,7 @@ function printNodes(layers) {
                 .attr('y1', parentsYLocation)
                 .attr('x2', d => {
                     var sonIndex = layers[depth+1].findIndex(function(child) {
-                        return child.id == d.id
+                        return child.id == d.node.id
                     })
                     return childrenSeparation * (sonIndex + 1)
                 })
@@ -204,13 +221,23 @@ function printNodes(layers) {
                 .on('mouseover', function(d) {
                     d3.select(this).transition().duration(10)
                         .attr('opacity', 1)
-                        .attr('stroke-width', 5)
-                    linkInfo.show(d, d3.select(this))
+                        .attr('stroke-width', 10)
+                    linkInfo.show(d, d3.select(this), UCB1Constant)
                 })
                 .on('mouseout', function() {
                     d3.select(this).transition().duration(300)
-                        .attr('opacity', 0.1)
-                        .attr('stroke-width', 1)
+                        .attr('opacity', d => {
+                            if (d.preselected) {
+                                return 1
+                            }
+                            return 0.1
+                        })
+                        .attr('stroke-width', d => {
+                            if (d.preselected){
+                                return 5
+                            }
+                            return 3
+                        })
                     linkInfo.hide()
                 })
             links_g[depth][parentIndex].lower()

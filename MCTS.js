@@ -8,6 +8,7 @@ class MCTS{
         this.nVisits = 0
         this.nWins = 0
         this.nLosses = 0
+        this.nTies = 0
         this.depth = depth
         if (layers){
             this.layers = layers
@@ -17,7 +18,6 @@ class MCTS{
         this.locationInLayer = 0
         this.meanLocationParents = 0
         this.endGame = this.state.checkEndGame()
-        this.preselected = false
     }
 
     iteration(UCB1Constant) {
@@ -42,8 +42,10 @@ class MCTS{
     selection(UCB1Constant, returnArray=false) {
         var bestChildren = []
         var bestChildUSB1 = -1
+
+        // Collect children with best score in a list
         for (var i=0; i<this.children.length; i++) {
-            var childUSB1 = this.children[i].UCB1(UCB1Constant, this.nVisits)
+            var childUSB1 = this.children[i].UCB1Score(UCB1Constant)
             if (childUSB1 > bestChildUSB1) {
                 bestChildren = [this.children[i]]
                 bestChildUSB1 = childUSB1
@@ -51,10 +53,15 @@ class MCTS{
                 bestChildren.push(this.children[i])
             }
         }
+        
         if (returnArray) {
+            // Return all selected children
             return bestChildren
         }
-        return bestChildren[Math.floor(Math.random() * bestChildren.length)]
+        else {
+            // Return one of the selected children chosen randomly
+            return bestChildren[Math.floor(Math.random() * bestChildren.length)]
+        }
     }
 
     expansion() {
@@ -67,17 +74,21 @@ class MCTS{
         var stateChildren = this.state.expansion()
         
         for (var i=0; i<stateChildren.length; i++) {
+            var newState = stateChildren[i].state
+            var lastAction = stateChildren[i].lastAction
+
             // Check if child already is present in layers
-            var equalSibling = this.alreadyPresent(stateChildren[i])
+            var equalSibling = this.alreadyPresent(newState)
             if (equalSibling) {
-                var newChild = equalSibling
+                // If so, create a new link connecting this parent and the already present child 'equalSibling'
+                var newChildLink = new MCTSLink(equalSibling, this, lastAction)
             } else {
-                var newChild = new MCTS(stateChildren[i], this.layers, this.depth+1)
-                this.layers[this.depth+1].push(newChild)
+                // If not, create a new node and connect it with this parent
+                var newNode = new MCTS(newState, this.layers, this.depth+1)
+                var newChildLink =  new MCTSLink(newNode, this, lastAction)
+                this.layers[this.depth+1].push(newNode)
             }
-            newChild.parents.push(this)
-            this.children.push(newChild)
-            
+            this.children.push(newChildLink)
         }
     }
 
@@ -87,24 +98,14 @@ class MCTS{
     }
 
     backpropagation(result) {
-        this.nVisits++
         if (result == 1) {
             this.nWins++
         } else if (result == -1){
             this.nLosses++
-        }
-    }
-
-    UCB1(UCB1Constant, parentNVisits) {
-        if (this.nVisits == 0) {
-            return 1e9
-        }
-        if (this.turnX) {
-            var value = this.nWins
         } else {
-            var value = this.nLosses
+            this.nTies++
         }
-        return (value / this.nVisits) + UCB1Constant*Math.sqrt(Math.log(parentNVisits) / this.nVisits)
+        this.nVisits++
     }
 
     alreadyPresent(child) {
@@ -121,9 +122,9 @@ class MCTS{
     cleanPreselections() {
         // Reset all preselected states in nodes
         this.preselected = false
-        this.children.forEach(child => {
-            if (child.preselected) {
-                child.cleanPreselections()
+        this.children.forEach(childLink => {
+            if (childLink.preselected) {
+                childLink.cleanPreselections()
             }
         })
     }
@@ -132,8 +133,69 @@ class MCTS{
         // function to paint links and nodes as preselected for display
         this.preselected = true
         var bestChildren = this.selection(UCB1Constant, true)
-        bestChildren.forEach(child => {
-            child.preselection(UCB1Constant)
+        bestChildren.forEach(childLink => {
+            childLink.preselection(UCB1Constant)
         })
     }
+}
+
+
+class MCTSLink {
+
+    constructor(node, parentNode, lastAction){
+        this.node = node
+        this.node.parents.push(this)
+        this.parentNode = parentNode
+        this.lastAction = lastAction
+
+        this.nVisits = 0
+        this.preselected = false
+    }
+
+    UCB1Score(UCB1Constant=null) {
+        // Calculate node value
+        if (this.node.nVisits == 0) {
+            var value = Infinity
+        } else {
+            if (this.node.turnX) {
+                var value = this.node.nLosses / this.node.nVisits
+            } else {
+                var value = this.node.nWins / this.node.nVisits
+            }
+        }
+
+        // Calculate nVisits bias
+        if (this.nVisits == 0) {
+            var visitsBias = Infinity
+        } else {
+            var visitsBias = Math.sqrt(Math.log(this.parentNode.nVisits) / this.nVisits)
+        }
+
+        if (UCB1Constant) {
+            return value + UCB1Constant*visitsBias
+        } else {
+            return {
+                value: value,
+                bias: visitsBias,
+            }
+        }
+    }
+
+    iteration(UCB1Constant) {
+        var result = this.node.iteration(UCB1Constant)
+        this.nVisits++
+        return result
+    }
+
+    cleanPreselections() {
+        this.preselected = false
+        this.node.cleanPreselections()
+    }
+
+    preselection(UCB1Constant) {
+        // function to paint links and nodes as preselected for display
+        this.preselected = true
+        this.node.preselection(UCB1Constant)
+    }
+
 }

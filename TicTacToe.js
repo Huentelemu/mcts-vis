@@ -1,5 +1,5 @@
 class TicTacToe{
-    constructor(newTTT, turnX, nRemainingMoves, lastAction){
+    constructor(newTTT, turnX, nRemainingMoves){
         if (newTTT){
             this.ttt = newTTT
             this.turnX = turnX
@@ -14,7 +14,6 @@ class TicTacToe{
                 }
             }
             this.nRemainingMoves = nRemainingMoves
-            this.lastAction = lastAction
         } else {
             this.ttt = [
                 [
@@ -30,7 +29,6 @@ class TicTacToe{
             this.turnX = true
             this.id = 0
             this.nRemainingMoves = 9
-            this.lastAction = null
         }
     }
 
@@ -39,9 +37,18 @@ class TicTacToe{
 
         // Special case for first expansion
         if (this.id == 0){
-            stateChildren.push(new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false, 8, [0, 0]))
-            stateChildren.push(new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false, 8, [0, 1]))
-            stateChildren.push(new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false, 8, [1, 1]))
+            stateChildren.push({
+                state: new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false, 8),
+                lastAction: [0, 0]
+            })
+            stateChildren.push({
+                state: new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false, 8),
+                lastAction: [0, 1]
+            })
+            stateChildren.push({
+                state: new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false, 8),
+                lastAction: [1, 1]
+            })
             return stateChildren
         }
 
@@ -58,7 +65,10 @@ class TicTacToe{
                         newTTT[i][j] = -1
                     }
                     var lastAction = [i, j]
-                    stateChildren.push(new TicTacToe(newTTT, !this.turnX, this.nRemainingMoves-1, lastAction))
+                    stateChildren.push({
+                        state: new TicTacToe(newTTT, !this.turnX, this.nRemainingMoves-1),
+                        lastAction: lastAction
+                    })
                 }
             }
         }
@@ -152,7 +162,7 @@ class TicTacToe{
         console.log('-------------------------------')
     }
 
-    drawImage(svg, highlightLastAction=false) {
+    drawImage(svg, lastAction=null) {
         var self = this
 
         // Remove all previous elements
@@ -173,11 +183,9 @@ class TicTacToe{
                         .attr('r', 15)
                         .attr('stroke-width', 3)
                         .attr('stroke', function() {
-                            if (highlightLastAction){
-                                if (self.lastAction) {
-                                    if (self.lastAction[0] == i && self.lastAction[1] == j) {
-                                        return 'red'
-                                    }
+                            if (lastAction){
+                                if (lastAction[0] == i && lastAction[1] == j) {
+                                    return 'red'
                                 }
                             }
                             return 'black'
@@ -193,11 +201,9 @@ class TicTacToe{
                         })
                         .attr('stroke-width', 4)
                         .attr('stroke', function() {
-                            if (highlightLastAction){
-                                if (self.lastAction) {
-                                    if (self.lastAction[0] == i && self.lastAction[1] == j) {
-                                        return 'red'
-                                    }
+                            if (lastAction){
+                                if (lastAction[0] == i && lastAction[1] == j) {
+                                    return 'red'
                                 }
                             }
                             return 'black'

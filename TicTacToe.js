@@ -3,16 +3,7 @@ class TicTacToe{
         if (newTTT){
             this.ttt = newTTT
             this.turnX = turnX
-            this.id = 0
-            for (var i=0; i<this.ttt.length; i++){
-                for (var j=0; j<this.ttt[i].length; j++){
-                    if (this.ttt[i][j] == -1){
-                        this.id += 1 * Math.pow(3, i*3 + j)
-                    } else if (this.ttt[i][j] == 1){
-                        this.id += 2 * Math.pow(3, i*3 + j)
-                    }
-                }
-            }
+            this.id = this.deriveID(this.ttt)
             this.nRemainingMoves = nRemainingMoves
         } else {
             this.ttt = [
@@ -30,6 +21,81 @@ class TicTacToe{
             this.id = 0
             this.nRemainingMoves = 9
         }
+    }
+
+    deriveID(ttt) {
+        var id = 0
+        for (var i=0; i<ttt.length; i++){
+            for (var j=0; j<ttt[i].length; j++){
+                if (ttt[i][j] == -1){
+                    id += 1 * Math.pow(3, i*3 + j)
+                } else if (ttt[i][j] == 1){
+                    id += 2 * Math.pow(3, i*3 + j)
+                }
+            }
+        }
+        return id
+    }
+
+    copyTTT() {
+        return this.ttt.map((arr) => {
+            return arr.slice();
+        })
+    }
+
+    rotateTTT(ttt) {
+        var newTTT = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        newTTT[0][0] = ttt[0][2]
+        newTTT[0][2] = ttt[2][2]
+        newTTT[2][2] = ttt[2][0]
+        newTTT[2][0] = ttt[0][0]
+        newTTT[1][1] = ttt[1][1]
+        newTTT[1][0] = ttt[0][1]
+        newTTT[0][1] = ttt[1][2]
+        newTTT[1][2] = ttt[2][1]
+        newTTT[2][1] = ttt[1][0]
+        return newTTT
+    }
+
+    transposeTTT() {
+        var newTTT = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        for (var i=0; i<this.ttt.length; i++){
+            for (var j=0; j<this.ttt[i].length; j++){
+                newTTT[i][j] = this.ttt[j][i]
+            }
+        }
+        return newTTT
+    }
+
+    computeTranspositions() {
+        // Rotations of original TTT
+        var ttt = this.copyTTT()
+        var transpositions = [ttt]
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+        
+        // Rotations of transposed TTT
+        ttt = this.transposeTTT()
+        transpositions.push(ttt)
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+        ttt = this.rotateTTT(ttt)
+        transpositions.push(ttt)
+
+        // Derive IDs from ttt
+        this.transpositionIDs = []
+        transpositions.forEach(ttt => {
+            this.transpositionIDs.push(this.deriveID(ttt))
+        })
+
+        // Remove repeated IDs
+        this.transpositionIDs = [...new Set(this.transpositionIDs)]
     }
 
     expansion() {
@@ -56,9 +122,7 @@ class TicTacToe{
             for (var j=0; j<this.ttt[i].length; j++){
                 if (this.ttt[i][j] == 0){
                     // Copy new ttt
-                    var newTTT = this.ttt.map((arr) => {
-                        return arr.slice();
-                    })
+                    var newTTT = this.copyTTT()
                     if (this.turnX) {
                         newTTT[i][j] = 1
                     } else {
@@ -86,9 +150,7 @@ class TicTacToe{
         }
         remainingMoves = remainingMoves.sort(() => 0.5 - Math.random())
         // Copy new ttt
-        var rolloutState = this.ttt.map((arr) => {
-            return arr.slice();
-        })
+        var rolloutState = this.copyTTT()
         var rolloutTurnX = this.turnX
         while (remainingMoves.length > 0){
             var nextMove = remainingMoves.pop()

@@ -18,6 +18,7 @@ class MCTS{
         this.locationInLayer = 0
         this.meanLocationParents = 0
         this.endGame = this.state.checkEndGame()
+        this.state.computeTranspositions()
     }
 
     iteration(UCB1Constant) {

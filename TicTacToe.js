@@ -68,6 +68,7 @@ class TicTacToe{
     }
 
     computeTranspositions() {
+        
         // Rotations of original TTT
         var ttt = this.copyTTT()
         var transpositions = [ttt]
@@ -102,21 +103,21 @@ class TicTacToe{
         var stateChildren = []
 
         // Special case for first expansion
-        if (this.id == 0){
-            stateChildren.push({
-                state: new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false, 8),
-                lastAction: [0, 0]
-            })
-            stateChildren.push({
-                state: new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false, 8),
-                lastAction: [0, 1]
-            })
-            stateChildren.push({
-                state: new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false, 8),
-                lastAction: [1, 1]
-            })
-            return stateChildren
-        }
+        // if (this.id == 0){
+        //     stateChildren.push({
+        //         state: new TicTacToe([[1, 0, 0], [0, 0, 0], [0, 0, 0]], false, 8),
+        //         lastAction: [0, 0]
+        //     })
+        //     stateChildren.push({
+        //         state: new TicTacToe([[0, 1, 0], [0, 0, 0], [0, 0, 0]], false, 8),
+        //         lastAction: [0, 1]
+        //     })
+        //     stateChildren.push({
+        //         state: new TicTacToe([[0, 0, 0], [0, 1, 0], [0, 0, 0]], false, 8),
+        //         lastAction: [1, 1]
+        //     })
+        //     return stateChildren
+        // }
 
         for (var i=0; i<this.ttt.length; i++){
             for (var j=0; j<this.ttt[i].length; j++){
@@ -238,22 +239,15 @@ class TicTacToe{
         // Add circles and crosses
         for (var i=0; i<this.ttt.length; i++){
             for (var j=0; j<this.ttt[i].length; j++){
-                if (this.ttt[i][j] == -1) {
+                if (this.ttt[j][i] == -1) {
                     svg.append('circle')
                         .attr('cx', i*60 + 40)
                         .attr('cy', j*60 + 40)
                         .attr('r', 15)
                         .attr('stroke-width', 3)
-                        .attr('stroke', function() {
-                            if (lastAction){
-                                if (lastAction[0] == i && lastAction[1] == j) {
-                                    return 'red'
-                                }
-                            }
-                            return 'black'
-                        })
+                        .attr('stroke', 'black')
                         .attr('fill', 'none')
-                } else if (this.ttt[i][j] == 1) {
+                } else if (this.ttt[j][i] == 1) {
                     svg.append('path')
                         .attr('d', () => {
                             var o = 15 // offset
@@ -262,14 +256,31 @@ class TicTacToe{
                             return `M${x-o},${y-o}L${x+o},${y+o} M${x-o},${y+o}L${x+o},${y-o}`
                         })
                         .attr('stroke-width', 4)
-                        .attr('stroke', function() {
-                            if (lastAction){
-                                if (lastAction[0] == i && lastAction[1] == j) {
-                                    return 'red'
-                                }
-                            }
-                            return 'black'
-                        })
+                        .attr('stroke', 'black')
+                        .attr('fill', 'none')
+                }
+                if (lastAction){
+                    if (lastAction[0] == j && lastAction[1] == i) {
+                        if (this.turnX) {
+                            svg.append('path')
+                                .attr('d', () => {
+                                    var o = 15 // offset
+                                    var x = i*60 +40 
+                                    var y = j*60 +40
+                                    return `M${x-o},${y-o}L${x+o},${y+o} M${x-o},${y+o}L${x+o},${y-o}`
+                                })
+                                .attr('stroke-width', 4)
+                                .attr('stroke', 'red')
+                        } else {
+                            svg.append('circle')
+                                .attr('cx', i*60 + 40)
+                                .attr('cy', j*60 + 40)
+                                .attr('r', 15)
+                                .attr('stroke-width', 3)
+                                .attr('stroke', 'red')
+                                .attr('fill', 'none')
+                        }
+                    }
                 }
             }
         }

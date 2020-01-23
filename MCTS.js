@@ -3,6 +3,7 @@ class MCTS{
         this.parents = []
         this.children = []
         this.state = state
+        this.state.computeTranspositions()
         this.id = state.id
         this.leaf = true
         this.nVisits = 0
@@ -18,7 +19,6 @@ class MCTS{
         this.locationInLayer = 0
         this.meanLocationParents = 0
         this.endGame = this.state.checkEndGame()
-        this.state.computeTranspositions()
     }
 
     iteration(UCB1Constant) {
@@ -72,7 +72,7 @@ class MCTS{
             this.layers.push([])
         }
         
-        var stateChildren = this.state.expansion()
+        var stateChildren = this.state.expansion()        
         
         for (var i=0; i<stateChildren.length; i++) {
             var newState = stateChildren[i].state
@@ -81,7 +81,9 @@ class MCTS{
             // Check if child already is present in layers
             var equalSibling = this.alreadyPresent(newState)
             if (equalSibling) {
-                // If so, create a new link connecting this parent and the already present child 'equalSibling'
+                // If this sibling is already a child of the present node, skip it
+                if (this.children.map(child => child.node.id).includes(equalSibling.id)) continue
+                // If child is already present, create a new link connecting this parent and the already present child 'equalSibling'
                 var newChildLink = new MCTSLink(equalSibling, this, lastAction)
             } else {
                 // If not, create a new node and connect it with this parent
@@ -109,11 +111,23 @@ class MCTS{
         this.nVisits++
     }
 
-    alreadyPresent(child) {
+    /*alreadyPresent(child) {
         // Check if child state is has already a sibling
         var siblings = this.layers[this.depth+1]
         for (var i=0; i<siblings.length; i++){
             if (siblings[i].state.isEquals(child)) {
+                return siblings[i]
+            }
+        }
+        return false
+    }*/
+
+    alreadyPresent(child) {
+        // Check if child state is has already a sibling
+        var siblings = this.layers[this.depth+1]
+        for (var i=0; i<siblings.length; i++){
+            if (siblings[i].state.transpositionIDs.includes(child.id)) {
+            //if (siblings[i].state.id == child.id) {
                 return siblings[i]
             }
         }

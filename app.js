@@ -1,9 +1,9 @@
-var width = 2000//700
+var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
 var height = 1100
 var nMaxLayers = 10
 var mainSVG = d3.select('body').append('svg').attr('width', width).attr('height', height)
 
-document.body.style.background = "gray"
+document.body.style.background = "#006400"
 
 var colorScale = d3.scaleLinear()
     .range(['red', 'white', 'blue']) // or use hex values

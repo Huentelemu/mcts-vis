@@ -29,7 +29,7 @@ class LinkInfo {
             .style('left', parseInt(line.attr('x2')) + 50 + 'px')
         this.tooltipText.html('UCB1: ' + UCB1String)  // '<br/>UCB1: '
         this.tooltipSVG.selectAll("*").remove()
-        link.node.state.drawImage(this.tooltipSVG, link.lastAction)
+        link.parentNode.state.drawImage(this.tooltipSVG, link.lastAction)
     }
 
     hide() {

@@ -111,17 +111,6 @@ class MCTS{
         this.nVisits++
     }
 
-    /*alreadyPresent(child) {
-        // Check if child state is has already a sibling
-        var siblings = this.layers[this.depth+1]
-        for (var i=0; i<siblings.length; i++){
-            if (siblings[i].state.isEquals(child)) {
-                return siblings[i]
-            }
-        }
-        return false
-    }*/
-
     alreadyPresent(child) {
         // Check if child state is has already a sibling
         var siblings = this.layers[this.depth+1]
@@ -172,7 +161,7 @@ class MCTSLink {
         if (this.node.nVisits == 0) {
             var value = Infinity
         } else {
-            if (this.node.turnX) {
+            if (this.node.state.turnX) {
                 var value = this.node.nLosses / this.node.nVisits
             } else {
                 var value = this.node.nWins / this.node.nVisits

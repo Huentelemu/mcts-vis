@@ -18,16 +18,24 @@ class LinkInfo {
     }
 
     show(link, line, UCB1Constant) {
-        var UCB1Score = link.UCB1Score(UCB1Constant)
-        if (UCB1Score == Infinity) {
+        console.log('link', link)
+        var asd = link.UCB1Score()
+        console.log('asd', asd)
+        const {value, bias} = link.UCB1Score()
+        var UCB1Score = value + UCB1Constant*bias
+        if (value == Infinity) {
+            var valueString = '&#8734'
+            var biasString = '&#8734'
             var UCB1String = '&#8734'
         } else {
+            var valueString = value.toFixed(2)
+            var biasString = bias.toFixed(2)
             var UCB1String = UCB1Score.toFixed(2)
         }
         this.tooltip.style('opacity', 0.9)
             .style('top', parseInt(line.attr('y2')) + 50 + 'px')
             .style('left', parseInt(line.attr('x2')) + 50 + 'px')
-        this.tooltipText.html('UCB1: ' + UCB1String)  // '<br/>UCB1: '
+        this.tooltipText.html('Value: ' + valueString + '<br/>Bias: ' + biasString + '<br/>UCB1: ' + UCB1String)
         this.tooltipSVG.selectAll("*").remove()
         link.parentNode.state.drawImage(this.tooltipSVG, link.lastAction)
     }

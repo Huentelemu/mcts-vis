@@ -19,6 +19,8 @@ var links = []
 
 var UCB1Constant = 2
 
+var nodeTransitionDuration = 500
+
 // Initialize info tooltips
 var nodeInfo = new NodeInfo()
 var linkInfo = new LinkInfo()
@@ -37,6 +39,13 @@ var multiIterationButton1 = d3.select('body').append('button').text('20 Iteratio
 var multiIterationButton2 = d3.select('body').append('button').text('1000 Iterations')
     .on('click', () => iterationFunction(1000))
 
+var resetHighlightsButton = d3.select('body').append('button').text('Reset Highlights').attr('disabled', 'disabled')
+    .on('click', () => {
+        resetHighlightsButton.attr('disabled', 'disabled')
+        root.resetHighlights()
+        printNodes(root.layers)
+    })
+
 function iterationFunction(nIterations) {
     for (var i=0; i<nIterations; i++){
         root.iteration(UCB1Constant)
@@ -47,8 +56,10 @@ function iterationFunction(nIterations) {
     console.log('Nodes:', nodes)
 }
 
+function printNodes(layers, highlights=false) {
 
-function printNodes(layers) {
+    var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    width *= 0.8
 
     // Reorder nodes in layers for cleaner display of links
     for (var depth=0; depth<layers.length-1; depth++) {
@@ -103,10 +114,68 @@ function printNodes(layers) {
         nodes[depth] = nodes_g[depth].selectAll('circle').data(layers[depth])
         nodes[depth].exit().remove()
         nodes[depth] = nodes[depth].enter().append("circle").merge(nodes[depth])
+        
+        nodes[depth] = nodes[depth]
+            .on('mouseover', function(d) {
+                if (highlights) {
+                    if (!d.highlightedElement) return
+                }
+                d3.select(this).transition().duration(10)
+                    .attr('opacity', d => {
+                        if (d.preselected) {
+                            return 1
+                        }
+                        return 0.5
+                    })
+                    .attr('r', function(d) {
+                        if (root.nVisits>0) {
+                            var relativeToRoot = d.nVisits/root.nVisits
+                        } else {
+                            var relativeToRoot = 1
+                        }
+                        return Math.min((relativeToRoot*50 + 5) * 2, 80)
+                    })
+                nodeInfo.show(d, d3.select(this))
+            })
+            .on('mouseout', function(d) {
+                if (highlights) {
+                    if (!d.highlightedElement) return
+                }
+                d3.select(this).transition().duration(300)
+                    .attr('opacity', d => {
+                        if (d.preselected) {
+                            return 1
+                        }
+                        return 0.5
+                    })
+                    .attr('r', function(d) {
+                        if (root.nVisits>0) {
+                            var relativeToRoot = d.nVisits/root.nVisits
+                        } else {
+                            var relativeToRoot = 1
+                        }
+                        return relativeToRoot*50 + 5
+                    })
+                    
+                nodeInfo.hide()
+            })
+            .on('click', (d) => {
+                if (highlights) {
+                    if (!d.highlightedElement) return
+                }
+                resetHighlightsButton.attr('disabled', null)
+                root.resetHighlights()
+                d.highlightElement()
+                printNodes(root.layers, true)
+            })
+
+        nodes[depth] = nodes[depth]
             .attr('cx', function(d, i) {
                 return parentsSeparation * (i + 1)
             })
             .attr('cy', parentsYLocation)
+
+        nodes[depth] = nodes[depth].transition().duration(nodeTransitionDuration)
             .attr('fill', function(d) {
                 if (d.nVisits == 0) {
                     return 'green'
@@ -129,6 +198,11 @@ function printNodes(layers) {
                 return 1
             })
             .attr("opacity", d => {
+                if (highlights) {
+                    if (!d.highlightedElement) {
+                        return 0
+                    }
+                }
                 if (d.preselected) {
                     return 1
                 }
@@ -143,44 +217,6 @@ function printNodes(layers) {
                 return relativeToRoot*50 + 5
             }) 
             .style('position', 'absolute')
-            .on('mouseover', function(d) {
-                d3.select(this).transition().duration(10)
-                    .attr('opacity', d => {
-                        if (d.preselected) {
-                            return 1
-                        }
-                        return 0.5
-                    })
-                    .attr('r', function(d) {
-                        if (root.nVisits>0) {
-                            var relativeToRoot = d.nVisits/root.nVisits
-                        } else {
-                            var relativeToRoot = 1
-                        }
-                        return (relativeToRoot*50 + 5) * 2
-                    })
-                nodeInfo.show(d, d3.select(this))
-            })
-            .on('mouseout', function() {
-                d3.select(this).transition().duration(300)
-                    .attr('opacity', d => {
-                        if (d.preselected) {
-                            return 1
-                        }
-                        return 0.5
-                    })
-                    .attr('r', function(d) {
-                        if (root.nVisits>0) {
-                            var relativeToRoot = d.nVisits/root.nVisits
-                        } else {
-                            var relativeToRoot = 1
-                        }
-                        return relativeToRoot*50 + 5
-                    })
-                    
-                nodeInfo.hide()
-            })
-            .on('click', (d) => console.log('MCTS', d))
 
         // Build links
 
@@ -189,42 +225,38 @@ function printNodes(layers) {
             links[depth].push(null)
         }
         for (var parentIndex=0; parentIndex<layers[depth].length; parentIndex++){
+
+            var parent = layers[depth][parentIndex]
+            
+            if (highlights) {
+                var children = []
+                for (var c=0; c<parent.children.length; c++) {
+                    if (parent.children[c].node.highlightedElement) {
+                        children.push(parent.children[c])
+                    }
+                }
+            } else {
+                var children = parent.children
+            }
             var parent = layers[depth][parentIndex]
             var parentXLocation = parentsSeparation * (parentIndex + 1)
 
-            links[depth][parentIndex] = links_g[depth][parentIndex].selectAll('line').data(parent.children)
+            links[depth][parentIndex] = links_g[depth][parentIndex].selectAll('line').data(children)
             links[depth][parentIndex].exit().remove()
             links[depth][parentIndex] = links[depth][parentIndex].enter().append('line').merge(links[depth][parentIndex])
-                .attr('stroke', 'black')
-                .attr('fill', 'none')
-                .attr('stroke-width', d => {
-                    if (d.preselected){
-                        return 5
-                    }
-                    return 3
-                })
-                .attr('opacity', d => {
-                    if (d.preselected) {
-                        return 1
-                    }
-                    return 0.1
-                })
-                .attr('x1', parentXLocation)
-                .attr('y1', parentsYLocation)
-                .attr('x2', d => {
-                    var sonIndex = layers[depth+1].findIndex(function(child) {
-                        return child.id == d.node.id
-                    })
-                    return childrenSeparation * (sonIndex + 1)
-                })
-                .attr('y2', childrenYLocation)
                 .on('mouseover', function(d) {
+                    if (highlights) {
+                        if (!d.highlightedElement) return
+                    }
                     d3.select(this).transition().duration(10)
                         .attr('opacity', 1)
                         .attr('stroke-width', 10)
                     linkInfo.show(d, d3.select(this), UCB1Constant)
                 })
-                .on('mouseout', function() {
+                .on('mouseout', function(d) {
+                    if (highlights) {
+                        if (!d.highlightedElement) return
+                    }
                     d3.select(this).transition().duration(300)
                         .attr('opacity', d => {
                             if (d.preselected) {
@@ -240,14 +272,42 @@ function printNodes(layers) {
                         })
                     linkInfo.hide()
                 })
+
+            links[depth][parentIndex] = links[depth][parentIndex]
+                .attr('x1', parentXLocation)
+                .attr('y1', parentsYLocation)
+                .attr('x2', d => {
+                    var sonIndex = layers[depth+1].findIndex(function(child) {
+                        return child.id == d.node.id
+                    })
+                    return childrenSeparation * (sonIndex + 1)
+                })
+                .attr('y2', childrenYLocation)
+                .attr('stroke', 'black')
+                .attr('fill', 'none')
+                .attr('stroke-width', d => {
+                    if (d.preselected){
+                        return 5
+                    }
+                    return 3
+                })
+                
+                .transition().duration(nodeTransitionDuration)
+                .attr('opacity', d => {
+                    if (highlights) {
+                        if (!d.highlightedElement) {
+                            return 0
+                        }
+                    }
+                    if (d.preselected) {
+                        return 1
+                    }
+                    return 0.1
+                })
+                
+                
+                
             links_g[depth][parentIndex].lower()
         }
     }
 }
-
-
-
-mainSVG.selectAll('circle').enter().append('circle')
-
-// Button for iterations
-

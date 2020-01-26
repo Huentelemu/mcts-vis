@@ -19,6 +19,7 @@ class MCTS{
         this.locationInLayer = 0
         this.meanLocationParents = 0
         this.endGame = this.state.checkEndGame()
+        this.highlightedElement = false
     }
 
     iteration(UCB1Constant) {
@@ -141,6 +142,31 @@ class MCTS{
             childLink.preselection(UCB1Constant)
         })
     }
+
+    highlightElement() {
+        this.highlightedElement = true
+        this.children.forEach(child => child.propagateHighlightToChildren())
+        this.parents.forEach(parent => parent.propagateHighlightToParents())
+    }
+
+    propagateHighlightToChildren() {
+        this.highlightedElement = true
+        this.children.forEach(child => child.propagateHighlightToChildren())
+    }
+
+    propagateHighlightToParents() {
+        this.highlightedElement = true
+        this.parents.forEach(parent => parent.propagateHighlightToParents())
+    }
+
+    resetHighlights() {
+        this.highlightedElement = false
+        this.children.forEach(child => {
+            if (child.highlightedElement) {
+                child.resetHighlights()
+            }
+        })
+    }
 }
 
 
@@ -154,6 +180,7 @@ class MCTSLink {
 
         this.nVisits = 0
         this.preselected = false
+        this.highlightedElement = false
     }
 
     UCB1Score(UCB1Constant=null) {
@@ -202,4 +229,18 @@ class MCTSLink {
         this.node.preselection(UCB1Constant)
     }
 
+    propagateHighlightToChildren() {
+        this.highlightedElement = true
+        this.node.propagateHighlightToChildren()
+    }
+
+    propagateHighlightToParents() {
+        this.highlightedElement = true
+        this.parentNode.propagateHighlightToParents()
+    }
+
+    resetHighlights() {
+        this.highlightedElement = false
+        this.node.resetHighlights()
+    }
 }

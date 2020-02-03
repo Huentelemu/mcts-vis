@@ -21,6 +21,32 @@ var UCB1Constant = 2
 
 var nodeTransitionDuration = 500
 
+var defaultUCB1Constant = 2
+var UCB1Constant = defaultUCB1Constant
+
+var sliderUCB1Constant = d3.sliderBottom()
+    .min(0)
+    .max(10)
+    .width(400)
+    .ticks(10)
+    .step(0.1)
+    .default(defaultUCB1Constant)
+    .on('onchange', val => {
+        UCB1Constant = val
+        printNodes(root.layers)
+    })
+var gUCB1Constant = d3
+    .select('body')
+    .append('svg')
+    .attr('width', 500)
+    .attr('height', 100)
+    .append('g')
+    .attr('transform', 'translate(30,30)')
+gUCB1Constant.call(sliderUCB1Constant)
+
+
+
+
 // Initialize info tooltips
 var nodeInfo = new NodeInfo()
 var linkInfo = new LinkInfo()
